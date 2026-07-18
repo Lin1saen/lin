@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🤔%3C/text%3E%3C/svg%3E" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>404 · 页面走丢啦喵~</title>
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100vh;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* ===== 全屏毛玻璃背景 ===== */
+        body {
+            background-image: url("https://pic1.imgdb.cn/i/033qRDrme6JTQRE9gm9AcY.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.20);
+            backdrop-filter: blur(40px) saturate(240%);
+            -webkit-backdrop-filter: blur(40px) saturate(240%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ===== 内容卡片 ===== */
+        .error-card {
+            width: 100%;
+            max-width: 560px;
+            padding: 30px 36px 40px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        /* ===== 装饰小元素 ===== */
+        .error-card::before {
+            content: "🐾";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 60px;
+            opacity: 0.10;
+            transform: rotate(20deg);
+            pointer-events: none;
+        }
+        .error-card::after {
+            content: "🐾";
+            position: absolute;
+            bottom: -10px;
+            left: -10px;
+            font-size: 50px;
+            opacity: 0.10;
+            transform: rotate(-20deg) scaleX(-1);
+            pointer-events: none;
+        }
+
+        /* ===== 顶部：猫猫 + 404 同一行 ===== */
+        .error-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+            margin-bottom: 6px;
+        }
+
+        .error-emoji {
+            font-size: 80px;
+            line-height: 1;
+            display: inline-block;
+            animation: popEmoji 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes popEmoji {
+            0%, 100% { transform: scale(1) rotate(-2deg); }
+            50% { transform: scale(1.06) rotate(2deg); }
+        }
+
+        .error-number {
+            font-family: "Times New Roman", "Songti SC", serif;
+            font-size: 80px;
+            font-weight: 700;
+            line-height: 1;
+            color: #222;
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+            letter-spacing: 2px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        /* 每个数字独立浮动 */
+        .error-number span {
+            display: inline-block;
+            animation: floatNumber 3s ease-in-out infinite;
+        }
+        .error-number span:nth-child(1) { animation-delay: 0.0s; }
+        .error-number span:nth-child(2) { animation-delay: 0.3s; }
+        .error-number span:nth-child(3) { animation-delay: 0.6s; }
+        .error-number span:nth-child(4) { animation-delay: 0.9s; }
+        .error-number span:nth-child(5) { animation-delay: 1.2s; }
+        .error-number span:nth-child(6) { animation-delay: 1.5s; }
+        .error-number span:nth-child(7) { animation-delay: 1.8s; }
+        .error-number span:nth-child(8) { animation-delay: 2.1s; }
+        .error-number span:nth-child(9) { animation-delay: 2.4s; }
+        .error-number span:nth-child(10) { animation-delay: 2.7s; }
+        .error-number span:nth-child(11) { animation-delay: 3.0s; }
+
+        @keyframes floatNumber {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* ===== 横屏显示完整 404 Not Found，竖屏显示简写 404 ===== */
+        .error-number .full { display: inline; }
+        .error-number .short { display: none; }
+
+        /* 竖屏（宽高比 < 1）显示简写 */
+        @media (max-aspect-ratio: 1/1) {
+            .error-number .full { display: none; }
+            .error-number .short { display: inline; }
+            .error-number { font-size: 70px; }
+            .error-emoji { font-size: 70px; }
+            .error-header { gap: 10px; }
+        }
+
+        /* 超窄屏进一步缩小 */
+        @media (max-aspect-ratio: 9/16) and (max-width: 480px) {
+            .error-number { font-size: 56px; }
+            .error-emoji { font-size: 56px; }
+            .error-header { gap: 8px; }
+        }
+
+        @media (max-width: 400px) {
+            .error-number { font-size: 48px; }
+            .error-emoji { font-size: 48px; }
+            .error-header { gap: 6px; }
+        }
+
+        @media (max-width: 340px) {
+            .error-number { font-size: 38px; }
+            .error-emoji { font-size: 38px; }
+            .error-header { gap: 4px; }
+        }
+
+        /* ===== 多语言文本容器（带淡入淡出） ===== */
+        .lang-container {
+            position: relative;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        .lang-item {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .lang-item.active {
+            opacity: 1;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .lang-item.fade-out {
+            opacity: 0;
+        }
+
+        .lang-title {
+            font-family: "Times New Roman", "Songti SC", serif;
+            font-size: 26px;
+            font-weight: 500;
+            color: #222;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+            line-height: 1.3;
+        }
+
+        .lang-desc {
+            font-size: 15px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            opacity: 0.85;
+            padding: 0 8px;
+        }
+
+        .lang-desc .highlight {
+            color: #007aff;
+            font-weight: 500;
+        }
+
+        /* ===== 语言指示点 ===== */
+        .lang-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 14px;
+        }
+
+        .lang-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.15);
+            transition: background 0.4s ease, transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lang-dot.active {
+            background: rgba(0, 0, 0, 0.55);
+            transform: scale(1.3);
+        }
+
+        /* ===== 按钮组 ===== */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn-home {
+            background: rgba(255, 255, 255, 0.30);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            padding: 14px 44px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #222;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            touch-action: manipulation;
+            text-decoration: none;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .btn-home:hover {
+            background: rgba(255, 255, 255, 0.55);
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-home:active { transform: scale(0.94); }
+        .btn-home .icon { font-size: 22px; }
+
+        .footer-egg {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.40);
+            letter-spacing: 0.5px;
+            transition: color 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.12);
+            padding-bottom: 3px;
+        }
+
+        .footer-egg:hover {
+            color: rgba(0, 0, 0, 0.70);
+            border-bottom-color: rgba(0, 0, 0, 0.30);
+        }
+        .footer-egg:active { transform: scale(0.94); }
+
+        /* ===== 响应式调整 ===== */
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .error-card { padding: 24px 18px 28px; max-width: 100%; }
+            .lang-title { font-size: 22px; }
+            .lang-desc { font-size: 14px; margin-bottom: 10px; }
+            .btn-home { padding: 12px 32px; font-size: 16px; max-width: 240px; }
+            .btn-home .icon { font-size: 18px; }
+            .lang-container { min-height: 95px; }
+            .lang-dots { margin-top: 6px; margin-bottom: 10px; gap: 6px; }
+            .lang-dot { width: 7px; height: 7px; }
+            .footer-egg { font-size: 13px; }
+            .error-header { gap: 8px; }
+        }
+
+        @media (max-width: 420px) {
+            body { padding: 12px; }
+            .error-card { padding: 16px 12px 20px; }
+            .lang-title { font-size: 18px; }
+            .lang-desc { font-size: 13px; margin-bottom: 8px; padding: 0 4px; }
+            .btn-home { padding: 10px 20px; font-size: 14px; max-width: 200px; gap: 6px; }
+            .btn-home .icon { font-size: 16px; }
+            .lang-container { min-height: 80px; }
+            .lang-dots { margin-top: 4px; margin-bottom: 8px; gap: 5px; }
+            .lang-dot { width: 6px; height: 6px; }
+            .footer-egg { font-size: 12px; }
+            .error-header { gap: 6px; }
+        }
+
+        @media (max-width: 360px) {
+            .lang-title { font-size: 15px; }
+            .lang-desc { font-size: 12px; }
+            .btn-home { padding: 8px 16px; font-size: 13px; max-width: 170px; }
+            .btn-home .icon { font-size: 14px; }
+            .lang-container { min-height: 70px; }
+            .footer-egg { font-size: 11px; }
+        }
+
+        /* 超长屏竖屏 */
+        @media (max-aspect-ratio: 9/16) and (min-width: 300px) {
+            .error-card { padding: 20px 16px 24px; max-width: 400px; }
+            .lang-title { font-size: 20px; }
+            .lang-container { min-height: 90px; }
+            .btn-home { max-width: 220px; }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .btn-home:hover { transform: none; background: rgba(255,255,255,0.30); }
+            .footer-egg:hover { color: rgba(0,0,0,0.40); border-bottom-color: rgba(0,0,0,0.12); }
+            .lang-dot:hover { background: rgba(0,0,0,0.15); }
+            .lang-dot.active:hover { background: rgba(0,0,0,0.55); }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body::before { background: rgba(255,255,255,0.12); }
+            .error-number { color: #1a1a1a; }
+            .lang-title { color: #1a1a1a; }
+            .lang-desc { color: #333; }
+            .btn-home { background: rgba(255,255,255,0.35); color: #1a1a1a; }
+            .btn-home:hover { background: rgba(255,255,255,0.60); }
+            .footer-egg { color: rgba(0,0,0,0.45); }
+            .footer-egg:hover { color: rgba(0,0,0,0.75); }
+            .lang-dot { background: rgba(0,0,0,0.20); }
+            .lang-dot.active { background: rgba(0,0,0,0.60); }
+        }
+
+        /* ===== 樱花雨 ===== */
+        .sakura-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .sakura {
+            position: absolute;
+            top: -30px;
+            pointer-events: none;
+            font-size: 28px;
+            line-height: 1;
+            opacity: 0.9;
+            will-change: transform;
+            animation: sakuraFall linear forwards;
+        }
+
+        @keyframes sakuraFall {
+            0% {
+                transform: translateY(0) rotate(0deg) translateX(0);
+                opacity: 0.95;
+            }
+            20% {
+                transform: translateY(20vh) rotate(60deg) translateX(15px);
+            }
+            40% {
+                transform: translateY(40vh) rotate(120deg) translateX(-20px);
+            }
+            60% {
+                transform: translateY(60vh) rotate(180deg) translateX(18px);
+            }
+            80% {
+                transform: translateY(80vh) rotate(240deg) translateX(-12px);
+            }
+            100% {
+                transform: translateY(105vh) rotate(300deg) translateX(8px);
+                opacity: 0.6;
+            }
+        }
+
+        /* ===== 页面内容滚动（防止樱花遮挡交互） ===== */
+        .error-card {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 樱花雨容器 ===== -->
+    <div class="sakura-container" id="sakuraContainer"></div>
+
+    <div class="error-card">
+        <!-- ===== 顶部：猫猫 + 404 同一行 ===== -->
+        <div class="error-header">
+            <span class="error-emoji">🤔</span>
+            <div class="error-number">
+                <span class="full">
+                    <span>4</span><span>0</span><span>4</span>
+                    <span> </span>
+                    <span>N</span><span>o</span><span>t</span>
+                    <span> </span>
+                    <span>F</span><span>o</span><span>u</span><span>n</span><span>d</span>
+                </span>
+                <span class="short">
+                    <span>4</span><span>0</span><span>4</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- ===== 多语言文本容器 ===== -->
+        <div class="lang-container" id="langContainer"></div>
+
+        <!-- ===== 语言指示点 ===== -->
+        <div class="lang-dots" id="langDots"></div>
+
+        <!-- ===== 按钮组 ===== -->
+        <div class="button-group">
+            <a href="https://1saen.rth1.xyz" class="btn-home" id="btnHome">
+                <span class="icon">🏠</span> <span id="btnHomeText">回到避风港</span>
+            </a>
+            <a href="games.html" class="footer-egg" id="footerEgg">🐾 喵呜 ~ 要不要试试其他页面？</a>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  多语言数据
+        // ============================================================
+        const LANGUAGES = [
+            { id: 'zh', label: '简' },
+            { id: 'zh_tw', label: '繁' },
+            { id: 'en', label: 'EN' },
+            { id: 'ja', label: '日' },
+            { id: 'ko', label: '韩' }
+        ];
+
+        const TRANSLATIONS = {
+            zh: {
+                title: '页面走丢啦喵~',
+                desc: '你访问的页面可能被移除了、<br>名字被改了，或者暂时<span class="highlight">躲起来了</span>喵……',
+                btnHome: '回到避风港',
+                footer: '🐾 喵呜 ~ 要不要试试其他页面？'
+            },
+            zh_tw: {
+                title: '頁面走丟啦喵~',
+                desc: '你訪問的頁面可能被移除了、<br>名字被改了，或者暫時<span class="highlight">躲起來了</span>喵……',
+                btnHome: '回到避風港',
+                footer: '🐾 喵嗚 ~ 要不要試試其他頁面？'
+            },
+            en: {
+                title: 'Page Not Found Meow~',
+                desc: 'The page you\'re looking for might have been removed,<br>renamed, or is just <span class="highlight">hiding</span> from you meow……',
+                btnHome: 'Back to Haven',
+                footer: '🐾 Meow ~ Want to try another page?'
+            },
+            ja: {
+                title: 'ページが見つかりませんにゃ~',
+                desc: 'お探しのページは削除されたか、<br>名前が変更されたか、または<span class="highlight">隠れて</span>いるかもしれませんにゃ……',
+                btnHome: '避风港に戻る',
+                footer: '🐾 にゃ ~ 他のページを試してみる？'
+            },
+            ko: {
+                title: '페이지를 찾을 수 없 야옹야옹~',
+                desc: '요청하신 페이지가 삭제되었거나,<br>이름이 변경되었거나, 아니면 <span class="highlight">숨어</span> 있을 수 있 야옹야옹……',
+                btnHome: '안식처로 돌아가기',
+                footer: '🐾 냐옹 ~ 다른 페이지로 가볼까요?'
+            }
+        };
+
+        // ============================================================
+        //  多语言状态
+        // ============================================================
+        let currentIndex = 0;
+        let intervalId = null;
+        const container = document.getElementById('langContainer');
+        const dotsContainer = document.getElementById('langDots');
+        const btnHomeText = document.getElementById('btnHomeText');
+        const footerEgg = document.getElementById('footerEgg');
+
+        // ============================================================
+        //  切换语言（带动画）
+        // ============================================================
+        function switchLanguage(index) {
+            const langId = LANGUAGES[index].id;
+            const t = TRANSLATIONS[langId];
+            const currentItem = document.querySelector('.lang-item');
+
+            if (currentItem) {
+                currentItem.classList.remove('active');
+                currentItem.classList.add('fade-out');
+
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div class="lang-item" id="langItem">
+                            <div class="lang-title">${t.title}</div>
+                            <div class="lang-desc">${t.desc}</div>
+                        </div>
+                    `;
+                    btnHomeText.textContent = t.btnHome;
+                    footerEgg.textContent = t.footer;
+                    document.querySelectorAll('.lang-dot').forEach((dot, i) => {
+                        dot.classList.toggle('active', i === index);
+                    });
+                    const newItem = document.getElementById('langItem');
+                    if (newItem) {
+                        void newItem.offsetWidth;
+                        newItem.classList.add('active');
+                    }
+                }, 500);
+            } else {
+                container.innerHTML = `
+                    <div class="lang-item active" id="langItem">
+                        <div class="lang-title">${t.title}</div>
+                        <div class="lang-desc">${t.desc}</div>
+                    </div>
+                `;
+                btnHomeText.textContent = t.btnHome;
+                footerEgg.textContent = t.footer;
+                document.querySelectorAll('.lang-dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i === index);
+                });
+            }
+        }
+
+        function renderLanguage(index) {
+            const langId = LANGUAGES[index].id;
+            const t = TRANSLATIONS[langId];
+            container.innerHTML = `
+                <div class="lang-item active" id="langItem">
+                    <div class="lang-title">${t.title}</div>
+                    <div class="lang-desc">${t.desc}</div>
+                </div>
+            `;
+            btnHomeText.textContent = t.btnHome;
+            footerEgg.textContent = t.footer;
+            document.querySelectorAll('.lang-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+
+        function startAutoSwitch() {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                currentIndex = (currentIndex + 1) % LANGUAGES.length;
+                switchLanguage(currentIndex);
+            }, 4500);
+        }
+
+        function setupDots() {
+            dotsContainer.innerHTML = '';
+            LANGUAGES.forEach((lang, i) => {
+                const dot = document.createElement('span');
+                dot.className = 'lang-dot' + (i === 0 ? ' active' : '');
+                dot.dataset.index = i;
+                dot.addEventListener('click', () => {
+                    if (i === currentIndex) return;
+                    currentIndex = i;
+                    switchLanguage(currentIndex);
+                    startAutoSwitch();
+                });
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        // ============================================================
+        //  樱花雨
+        // ============================================================
+        function startSakuraRain() {
+            const container = document.getElementById('sakuraContainer');
+            const count = 30;
+            let completed = 0;
+            const sakuraElements = [];
+
+            // 清除旧樱花
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const sakura = document.createElement('div');
+                sakura.className = 'sakura';
+                sakura.textContent = '🌸';
+
+                // 随机参数
+                const left = Math.random() * 100;
+                const size = 20 + Math.random() * 18; // 20~38px
+                const duration = 7 + Math.random() * 8; // 7~15s
+                const delay = Math.random() * 4; // 0~4s
+                const rotation = Math.random() * 360;
+
+                sakura.style.left = left + '%';
+                sakura.style.fontSize = size + 'px';
+                sakura.style.animationDuration = duration + 's';
+                sakura.style.animationDelay = delay + 's';
+                sakura.style.transform = 'rotate(' + rotation + 'deg)';
+
+                // 监听动画结束
+                sakura.addEventListener('animationend', () => {
+                    completed++;
+                    if (completed >= count) {
+                        // 所有樱花落完，清除
+                        setTimeout(() => {
+                            container.innerHTML = '';
+                        }, 300);
+                    }
+                });
+
+                container.appendChild(sakura);
+                sakuraElements.push(sakura);
+            }
+        }
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        function init() {
+            setupDots();
+            renderLanguage(0);
+            startAutoSwitch();
+            // 页面加载后延迟一点启动樱花雨，让页面先渲染
+            setTimeout(startSakuraRain, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

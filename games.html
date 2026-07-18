@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🥳%3C/text%3E%3C/svg%3E" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ethan的隐藏彩蛋 · 2048</title>
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100vh;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: url("https://pic1.imgdb.cn/i/033qRDrme6JTQRE9gm9AcY.png") no-repeat center center fixed;
+            background-size: cover;
+            color: #222;
+            touch-action: none;
+        }
+
+        /* ===== 全屏毛玻璃容器 ===== */
+        .game-wrapper {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            padding: 16px 20px 20px;
+            background: rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(40px) saturate(240%);
+            -webkit-backdrop-filter: blur(40px) saturate(240%);
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== 页面切换 ===== */
+        .page {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            animation: fadeIn 0.35s ease;
+        }
+        .page.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 通用按钮 ===== */
+        .btn-back {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.30);
+            padding: 8px 18px;
+            border-radius: 22px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.25s;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            touch-action: manipulation;
+        }
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.45);
+        }
+        .btn-back:active {
+            transform: scale(0.94);
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            padding: 14px 40px;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #222;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: inline-block;
+            touch-action: manipulation;
+        }
+        .btn-primary:active {
+            transform: scale(0.94);
+        }
+
+        /* ===== 桌面端叉叉按钮 ===== */
+        .btn-close-desktop {
+            display: none;
+            background: rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.10);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+        .btn-close-desktop:hover {
+            background: rgba(255, 50, 50, 0.15);
+            transform: rotate(90deg);
+        }
+        .btn-close-desktop:active {
+            transform: rotate(90deg) scale(0.92);
+        }
+
+        /* ===== 移动端圆形返回按钮 ===== */
+        .btn-back-mobile {
+            display: none;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            touch-action: manipulation;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .btn-back-mobile:active {
+            transform: scale(0.90);
+            background: rgba(255, 255, 255, 0.45);
+        }
+        .btn-back-mobile svg {
+            width: 28px;
+            height: 28px;
+            fill: #007aff;
+        }
+
+        @media (pointer: fine) {
+            .btn-close-desktop {
+                display: flex !important;
+            }
+            .btn-back-mobile {
+                display: none !important;
+            }
+            .game-header .btn-back {
+                display: none !important;
+            }
+        }
+        @media (pointer: coarse) {
+            .btn-close-desktop {
+                display: none !important;
+            }
+            .btn-back-mobile {
+                display: flex !important;
+            }
+            .game-header .btn-back {
+                display: none !important;
+            }
+        }
+
+        /* ===== 欢迎页 ===== */
+        #page-welcome {
+            padding: 0;
+        }
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0 8px;
+            flex-shrink: 0;
+        }
+        .welcome-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .welcome-emoji {
+            font-size: 64px;
+            margin-bottom: 8px;
+        }
+        .welcome-title {
+            font-family: "Times New Roman", "Songti SC", serif;
+            font-size: 30px;
+            font-weight: 500;
+            color: #222;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+            line-height: 1.5;
+        }
+        .welcome-sub {
+            font-size: 17px;
+            color: #444;
+            margin: 10px 0 28px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        /* ===== 游戏页 ===== */
+        #page-game {
+            padding: 4px 0 6px;
+        }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .game-header .title {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .game-header .title .game-icon {
+            font-size: 28px;
+        }
+
+        /* ===== 游戏容器 ===== */
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 4px 0 10px;
+            min-height: 0;
+        }
+
+        /* ===== 2048 样式 ===== */
+        .game-status {
+            font-size: 16px;
+            margin: 4px 0 12px;
+            padding: 6px 22px;
+            background: rgba(255, 255, 255, 0.20);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .board-2048 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            width: min(300px, 70vw);
+            height: min(300px, 70vw);
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            padding: 8px;
+            touch-action: none;
+        }
+        .cell-2048 {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #222;
+            transition: all 0.12s;
+        }
+        .cell-2048[data-value="2"] {
+            background: #eee4da;
+        }
+        .cell-2048[data-value="4"] {
+            background: #ede0c8;
+        }
+        .cell-2048[data-value="8"] {
+            background: #f2b179;
+            color: #fff;
+        }
+        .cell-2048[data-value="16"] {
+            background: #f59563;
+            color: #fff;
+        }
+        .cell-2048[data-value="32"] {
+            background: #f67c5f;
+            color: #fff;
+        }
+        .cell-2048[data-value="64"] {
+            background: #f65e3b;
+            color: #fff;
+        }
+        .cell-2048[data-value="128"] {
+            background: #edcf72;
+            color: #fff;
+            font-size: 24px;
+        }
+        .cell-2048[data-value="256"] {
+            background: #edcc61;
+            color: #fff;
+            font-size: 24px;
+        }
+        .cell-2048[data-value="512"] {
+            background: #edc850;
+            color: #fff;
+            font-size: 24px;
+        }
+        .cell-2048[data-value="1024"] {
+            background: #edc53f;
+            color: #fff;
+            font-size: 20px;
+        }
+        .cell-2048[data-value="2048"] {
+            background: #edc22e;
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .game-controls .btn-back {
+            font-size: 18px;
+            padding: 6px 18px;
+        }
+
+        /* ===== 自定义弹窗 ===== */
+        .modal-overlay-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        .modal-overlay-custom.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-overlay-custom.active .modal-box {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-box {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(48px) saturate(280%);
+            -webkit-backdrop-filter: blur(48px) saturate(280%);
+            border: 1px solid rgba(255, 255, 255, 0.60);
+            border-radius: 32px;
+            padding: 32px 28px 28px;
+            max-width: 340px;
+            width: 88%;
+            text-align: center;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12);
+            transform: scale(0.92) translateY(18px);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-box .modal-icon {
+            font-size: 48px;
+            margin-bottom: 6px;
+        }
+        .modal-box .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #222;
+        }
+        .modal-box .modal-desc {
+            font-size: 15px;
+            color: #444;
+            margin: 8px 0 20px;
+            line-height: 1.5;
+        }
+        .modal-box .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-box .modal-btn {
+            background: rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.40);
+            padding: 10px 28px;
+            border-radius: 26px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #222;
+            cursor: pointer;
+            transition: all 0.25s;
+            touch-action: manipulation;
+            flex: 1;
+            min-width: 80px;
+        }
+        .modal-box .modal-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.55);
+        }
+        .modal-box .modal-btn.primary {
+            background: rgba(0, 122, 255, 0.20);
+            border-color: rgba(0, 122, 255, 0.30);
+        }
+        .modal-box .modal-btn.secondary {
+            background: rgba(255, 255, 255, 0.20);
+            border-color: rgba(0, 0, 0, 0.10);
+        }
+        .modal-box .modal-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .game-wrapper {
+                padding: 12px 12px 16px;
+            }
+            .welcome-emoji {
+                font-size: 48px;
+            }
+            .welcome-title {
+                font-size: 24px;
+            }
+            .welcome-sub {
+                font-size: 15px;
+            }
+            .btn-primary {
+                padding: 12px 32px;
+                font-size: 17px;
+            }
+            .game-header .title {
+                font-size: 19px;
+            }
+            .board-2048 {
+                width: min(260px, 70vw);
+                height: min(260px, 70vw);
+                gap: 6px;
+                padding: 6px;
+            }
+            .cell-2048 {
+                font-size: 24px;
+            }
+            .cell-2048[data-value="128"] {
+                font-size: 20px;
+            }
+            .cell-2048[data-value="256"] {
+                font-size: 20px;
+            }
+            .cell-2048[data-value="512"] {
+                font-size: 20px;
+            }
+            .cell-2048[data-value="1024"] {
+                font-size: 17px;
+            }
+            .cell-2048[data-value="2048"] {
+                font-size: 17px;
+            }
+            .modal-box {
+                padding: 24px 20px 22px;
+                max-width: 300px;
+            }
+            .modal-box .modal-title {
+                font-size: 19px;
+            }
+            .modal-box .modal-btn {
+                font-size: 14px;
+                padding: 8px 20px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .game-wrapper {
+                padding: 8px 8px 12px;
+            }
+            .welcome-emoji {
+                font-size: 38px;
+            }
+            .welcome-title {
+                font-size: 20px;
+            }
+            .welcome-sub {
+                font-size: 13px;
+            }
+            .btn-primary {
+                padding: 10px 24px;
+                font-size: 15px;
+            }
+            .game-header .title {
+                font-size: 17px;
+            }
+            .board-2048 {
+                width: min(200px, 70vw);
+                height: min(200px, 70vw);
+                gap: 4px;
+                padding: 4px;
+            }
+            .cell-2048 {
+                font-size: 18px;
+            }
+            .cell-2048[data-value="128"] {
+                font-size: 15px;
+            }
+            .cell-2048[data-value="256"] {
+                font-size: 15px;
+            }
+            .cell-2048[data-value="512"] {
+                font-size: 15px;
+            }
+            .cell-2048[data-value="1024"] {
+                font-size: 13px;
+            }
+            .cell-2048[data-value="2048"] {
+                font-size: 13px;
+            }
+            .btn-back-mobile {
+                width: 38px;
+                height: 38px;
+            }
+            .btn-back-mobile svg {
+                width: 24px;
+                height: 24px;
+            }
+            .modal-box {
+                padding: 20px 16px 18px;
+                max-width: 260px;
+            }
+            .modal-box .modal-title {
+                font-size: 17px;
+            }
+            .modal-box .modal-desc {
+                font-size: 13px;
+            }
+            .modal-box .modal-btn {
+                padding: 8px 16px;
+                font-size: 13px;
+                min-width: 60px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .board-2048 {
+                width: 160px;
+                height: 160px;
+                gap: 3px;
+                padding: 3px;
+            }
+            .cell-2048 {
+                font-size: 15px;
+            }
+            .cell-2048[data-value="128"] {
+                font-size: 12px;
+            }
+            .cell-2048[data-value="256"] {
+                font-size: 12px;
+            }
+            .cell-2048[data-value="512"] {
+                font-size: 12px;
+            }
+            .cell-2048[data-value="1024"] {
+                font-size: 11px;
+            }
+            .cell-2048[data-value="2048"] {
+                font-size: 11px;
+            }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .btn-primary:hover {
+                transform: none;
+                background: rgba(255, 255, 255, 0.35);
+            }
+            .btn-back:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .btn-close-desktop:hover {
+                background: rgba(0, 0, 0, 0.06);
+                transform: none;
+            }
+        }
+
+        .page::-webkit-scrollbar {
+            width: 3px;
+        }
+        .page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .page::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <!-- ===== 欢迎页 ===== -->
+        <div class="page active" id="page-welcome">
+            <div class="welcome-header">
+                <button class="btn-back-mobile" onclick="goHome()" aria-label="返回">
+                    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </button>
+                <div style="flex:1;"></div>
+                <button class="btn-close-desktop" onclick="goHome()" aria-label="关闭">✕</button>
+            </div>
+            <div class="welcome-content">
+                <div class="welcome-emoji">🎊</div>
+                <div class="welcome-title">人类~<br>你发现了本喵喵埋的隐藏界面喵！</div>
+                <div class="welcome-sub">这里是 Ethan 的小彩蛋，<br>来一局 2048 吧~</div>
+                <button class="btn-primary" onclick="goToGame()">戳我开玩</button>
+            </div>
+        </div>
+
+        <!-- ===== 2048 游戏页 ===== -->
+        <div class="page" id="page-game">
+            <div class="game-header">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn-back-mobile" id="btn-back-mobile" onclick="goToWelcome()" aria-label="返回">
+                        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <span class="title"><span class="game-icon">🔢</span> 2048</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button class="btn-close-desktop" id="btn-close-desktop" onclick="goToWelcome()" aria-label="关闭">✕</button>
+                    <button class="btn-back" onclick="goHome()">🏠</button>
+                </div>
+            </div>
+            <div class="game-container" id="game-container">
+                <!-- 由 JS 渲染 2048 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 自定义弹窗 ===== -->
+    <div class="modal-overlay-custom" id="custom-modal">
+        <div class="modal-box">
+            <div class="modal-icon" id="modal-icon">🎉</div>
+            <div class="modal-title" id="modal-title">标题</div>
+            <div class="modal-desc" id="modal-desc">内容</div>
+            <div class="modal-buttons" id="modal-buttons">
+                <button class="modal-btn secondary" id="modal-btn-secondary" style="display:none;">返回大厅</button>
+                <button class="modal-btn primary" id="modal-btn-primary">好的</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  自定义弹窗
+        // ============================================================
+        function showModal(icon, title, desc, primaryText, primaryCallback, secondaryText, secondaryCallback) {
+            const overlay = document.getElementById('custom-modal');
+            document.getElementById('modal-icon').textContent = icon || '🎉';
+            document.getElementById('modal-title').textContent = title || '提示';
+            document.getElementById('modal-desc').textContent = desc || '';
+
+            const btnPrimary = document.getElementById('modal-btn-primary');
+            const btnSecondary = document.getElementById('modal-btn-secondary');
+
+            btnPrimary.textContent = primaryText || '好的';
+            btnPrimary.style.display = 'inline-block';
+
+            if (secondaryText) {
+                btnSecondary.textContent = secondaryText;
+                btnSecondary.style.display = 'inline-block';
+            } else {
+                btnSecondary.style.display = 'none';
+            }
+
+            overlay.classList.add('active');
+
+            btnPrimary.onclick = function() {
+                overlay.classList.remove('active');
+                if (primaryCallback) primaryCallback();
+            };
+            btnSecondary.onclick = function() {
+                overlay.classList.remove('active');
+                if (secondaryCallback) secondaryCallback();
+            };
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    if (primaryCallback) primaryCallback();
+                }
+            };
+        }
+
+        // ============================================================
+        //  页面切换
+        // ============================================================
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        function goToWelcome() {
+            showPage('page-welcome');
+        }
+
+        function goToGame() {
+            showPage('page-game');
+            render2048();
+        }
+
+        // ============================================================
+        //  2048 游戏
+        // ============================================================
+        let grid = [];
+        let score = 0;
+        let gameOver = false;
+        let size = 4;
+        let container = null;
+
+        function render2048() {
+            container = document.getElementById('game-container');
+            // 重置游戏
+            grid = Array.from({ length: size }, () => Array(size).fill(0));
+            score = 0;
+            gameOver = false;
+            spawnTile();
+            spawnTile();
+            renderBoard();
+        }
+
+        function spawnTile() {
+            const empty = [];
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    if (grid[i][j] === 0) empty.push({ x: i, y: j });
+                }
+            }
+            if (empty.length === 0) return;
+            const pos = empty[Math.floor(Math.random() * empty.length)];
+            grid[pos.x][pos.y] = Math.random() < 0.9 ? 2 : 4;
+        }
+
+        function slideRow(row) {
+            let arr = row.filter(v => v !== 0);
+            let newArr = [];
+            let merged = 0;
+            for (let i = 0; i < arr.length; i++) {
+                if (i + 1 < arr.length && arr[i] === arr[i + 1]) {
+                    newArr.push(arr[i] * 2);
+                    score += arr[i] * 2;
+                    merged++;
+                    i++;
+                } else {
+                    newArr.push(arr[i]);
+                }
+            }
+            while (newArr.length < size) newArr.push(0);
+            return newArr;
+        }
+
+        function move(dx, dy) {
+            if (gameOver) return;
+            let moved = false;
+            const oldGrid = grid.map(row => [...row]);
+
+            if (dx === 0 && dy === -1) { // up
+                for (let j = 0; j < size; j++) {
+                    const col = grid.map(row => row[j]);
+                    const newCol = slideRow(col);
+                    for (let i = 0; i < size; i++) {
+                        if (grid[i][j] !== newCol[i]) moved = true;
+                        grid[i][j] = newCol[i];
+                    }
+                }
+            } else if (dx === 0 && dy === 1) { // down
+                for (let j = 0; j < size; j++) {
+                    const col = grid.map(row => row[j]).reverse();
+                    const newCol = slideRow(col).reverse();
+                    for (let i = 0; i < size; i++) {
+                        if (grid[i][j] !== newCol[i]) moved = true;
+                        grid[i][j] = newCol[i];
+                    }
+                }
+            } else if (dx === -1 && dy === 0) { // left
+                for (let i = 0; i < size; i++) {
+                    const newRow = slideRow(grid[i]);
+                    for (let j = 0; j < size; j++) {
+                        if (grid[i][j] !== newRow[j]) moved = true;
+                        grid[i][j] = newRow[j];
+                    }
+                }
+            } else if (dx === 1 && dy === 0) { // right
+                for (let i = 0; i < size; i++) {
+                    const newRow = slideRow([...grid[i]].reverse()).reverse();
+                    for (let j = 0; j < size; j++) {
+                        if (grid[i][j] !== newRow[j]) moved = true;
+                        grid[i][j] = newRow[j];
+                    }
+                }
+            }
+
+            if (moved) {
+                spawnTile();
+                renderBoard();
+                // 检查胜利
+                const flat = grid.flat();
+                if (flat.some(v => v === 2048)) {
+                    gameOver = true;
+                    setTimeout(() => {
+                        showModal('🎉', '你赢了！', '恭喜达到 2048！', '再来一局', () => { render2048(); }, '返回大厅',
+                            goToWelcome);
+                    }, 300);
+                    return;
+                }
+                // 检查是否还能移动
+                if (flat.every(v => v !== 0)) {
+                    let canMove = false;
+                    for (let i = 0; i < size; i++) {
+                        for (let j = 0; j < size; j++) {
+                            if (i < size - 1 && grid[i][j] === grid[i + 1][j]) canMove = true;
+                            if (j < size - 1 && grid[i][j] === grid[i][j + 1]) canMove = true;
+                        }
+                    }
+                    if (!canMove) {
+                        gameOver = true;
+                        setTimeout(() => {
+                            showModal('💀', '游戏结束', `得分：${score}`, '再来一局', () => { render2048(); },
+                            '返回大厅', goToWelcome);
+                        }, 300);
+                    }
+                }
+            }
+        }
+
+        function renderBoard() {
+            let html = `<div class="game-status">🏆 分数: ${score}</div>
+                        <div class="board-2048" id="board-2048">`;
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const val = grid[i][j];
+                    html += `<div class="cell-2048" data-value="${val}">${val || ''}</div>`;
+                }
+            }
+            html += `</div>
+                     <div class="game-controls">
+                        <button class="btn-back" onclick="move(-1,0)">⬅</button>
+                        <button class="btn-back" onclick="move(0,-1)">⬆</button>
+                        <button class="btn-back" onclick="move(0,1)">⬇</button>
+                        <button class="btn-back" onclick="move(1,0)">➡</button>
+                        <button class="btn-back" onclick="render2048()">🔄 重开</button>
+                     </div>`;
+            container.innerHTML = html;
+
+            // 键盘支持
+            document.onkeydown = function(e) {
+                const map = {
+                    ArrowLeft: [-1, 0],
+                    ArrowUp: [0, -1],
+                    ArrowDown: [0, 1],
+                    ArrowRight: [1, 0]
+                };
+                if (map[e.key]) {
+                    e.preventDefault();
+                    move(map[e.key][0], map[e.key][1]);
+                }
+            };
+
+            // 触摸滑动支持
+            let startX, startY;
+            const boardEl = document.getElementById('board-2048');
+            if (boardEl) {
+                boardEl.addEventListener('touchstart', function(e) {
+                    const touch = e.touches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                }, { passive: true });
+                boardEl.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+                boardEl.addEventListener('touchend', function(e) {
+                    if (startX === undefined) return;
+                    const endX = e.changedTouches[0].clientX;
+                    const endY = e.changedTouches[0].clientY;
+                    const dx = endX - startX;
+                    const dy = endY - startY;
+                    const absDx = Math.abs(dx);
+                    const absDy = Math.abs(dy);
+                    if (Math.max(absDx, absDy) < 20) return;
+                    if (absDx > absDy) {
+                        move(dx > 0 ? 1 : -1, 0);
+                    } else {
+                        move(0, dy > 0 ? 1 : -1);
+                    }
+                    startX = undefined;
+                    startY = undefined;
+                }, { passive: true });
+            }
+        }
+
+        // ============================================================
+        //  初始化加载
+        // ============================================================
+        // 默认显示欢迎页
+        showPage('page-welcome');
+    </script>
+</body>
+</html>

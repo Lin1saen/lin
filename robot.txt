@@ -1,0 +1,11 @@
+# 给所有搜索引擎爬虫看的规则
+User-agent: *
+
+# 允许爬取所有正常页面
+Allow: /
+
+# 禁止爬取 404 错误页（避免被收录）
+Disallow: /404.html
+
+# 告诉爬虫站点地图的位置
+Sitemap: https://1saen.rth1.xyz/sitemap.xml

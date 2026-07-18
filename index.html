@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Ethan的避风港</title>
+    <link rel="icon" href="https://free.boltp.com/2026/07/16/6a58af5e7b526.webp" />
+    <style>
+        /* ===== 基础重置 ===== */
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+        body, html {
+            width: 100%; height: 100%; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: url("https://pic1.imgdb.cn/i/033qRDrme6JTQRE9gm9AcY.png") no-repeat center center fixed;
+            background-size: cover; color: #222; position: relative;
+        }
+        #viewport { width: 100%; height: 100%; overflow-y: scroll; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
+        #viewport::-webkit-scrollbar { display: none; }
+
+        /* 自定义滚动条（桌面） */
+        #custom-scrollbar-track {
+            position: fixed; right: 4px; top: 10%; width: 8px; height: 80%;
+            background: rgba(0,0,0,0.08); border-radius: 10px; z-index: 10000;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); display: block;
+        }
+        #custom-scrollbar-thumb {
+            position: absolute; width: 100%; height: 30px; background: rgba(0,0,0,0.3);
+            border-radius: 10px; cursor: pointer; transition: background 0.2s;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        #custom-scrollbar-thumb:hover { background: rgba(0,0,0,0.5); }
+
+        /* 液态玻璃 */
+        .liquid-glass {
+            background: rgba(255,255,255,0.35); backdrop-filter: blur(32px) saturate(220%);
+            -webkit-backdrop-filter: blur(32px) saturate(220%);
+            border: 1px solid rgba(255,255,255,0.50);
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.60), inset 0 -1px 0 rgba(0,0,0,0.04);
+            border-radius: 24px; transition: all 0.5s cubic-bezier(0.25,1,0.5,1);
+        }
+        .liquid-glass:hover { background: rgba(255,255,255,0.45); border-color: rgba(255,255,255,0.65); box-shadow: 0 12px 40px 0 rgba(0,0,0,0.12); transform: translateY(-2px); }
+
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.20); z-index: 20000;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            visibility: hidden; opacity: 0;
+            transition: opacity 0.45s cubic-bezier(0.25,1,0.5,1), visibility 0.45s cubic-bezier(0.25,1,0.5,1);
+        }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-overlay.active .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+        .modal-card {
+            width: 500px; max-width: 90%; padding: 30px; position: relative;
+            background: rgba(255,255,255,0.82); backdrop-filter: blur(48px) saturate(280%);
+            -webkit-backdrop-filter: blur(48px) saturate(280%);
+            border: 1px solid rgba(255,255,255,0.75);
+            box-shadow: 0 20px 60px 0 rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.80), inset 0 -1px 0 rgba(0,0,0,0.03);
+            border-radius: 24px; transform: scale(0.92) translateY(20px); opacity: 0;
+            transition: transform 0.45s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.45s cubic-bezier(0.175,0.885,0.32,1.275);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 15px; }
+        .modal-title { font-size: 20px; font-weight: 600; color: #222; }
+        .modal-close {
+            background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.10); width: 32px; height: 32px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333;
+            font-size: 18px; cursor: pointer; transition: all 0.3s;
+        }
+        .modal-close:hover { background: rgba(255,50,50,0.2); transform: rotate(90deg); }
+        .modal-back { display: none; background: none; border: none; font-size: 24px; color: #007aff; cursor: pointer; padding: 8px 12px 8px 0; font-weight: 500; align-items: center; gap: 4px; transition: opacity 0.2s; }
+        .modal-back:hover { opacity: 0.7; }
+        .modal-back svg { width: 28px; height: 28px; fill: #007aff; }
+
+        /* 头部导航 */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 70px; padding: 0 40px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 9999;
+            background: rgba(255,255,255,0.45); backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border-bottom: 1px solid rgba(255,255,255,0.50); box-shadow: 0 4px 30px rgba(0,0,0,0.06);
+            transition: height 0.3s, padding 0.3s;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #222;
+            text-shadow: 0 1px 4px rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: font-size 0.3s;
+        }
+        .logo-text {
+            display: inline;
+        }
+        .logo-img {
+            display: none;
+            height: 32px;
+            object-fit: contain;
+        }
+        nav { display: flex; gap: 25px; align-items: center; }
+        nav a { color: #333; text-decoration: none; font-size: 16px; font-weight: 500; padding: 8px 16px; border-radius: 14px; transition: all 0.3s cubic-bezier(0.25,1,0.5,1); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        nav a:hover { background: rgba(0,0,0,0.06); color: #000; transform: scale(1.05); }
+        .nav-label { display: inline; }
+
+        /* 页面布局 */
+        #viewport { width: 100%; height: 100%; overflow-y: scroll; scroll-behavior: smooth; }
+        section { width: 100%; min-height: 100vh; padding: 100px 8% 60px 8%; display: flex; align-items: center; justify-content: space-between; position: relative; }
+
+        /* 首页 */
+        #home { display: flex; flex-direction: row; gap: 40px; }
+        .profile-card { width: 32%; padding: 40px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; min-height: 520px; color: #222; }
+        .avatar-container { width: 150px; height: 150px; border-radius: 36px; overflow: hidden; border: 3px solid rgba(255,255,255,0.7); box-shadow: 0 10px 30px rgba(0,0,0,0.12); transition: transform 0.6s cubic-bezier(0.25,1,0.5,1); cursor: pointer; margin-bottom: 25px; flex-shrink: 0; }
+        .avatar-container:hover { transform: rotate(15deg) scale(1.1); }
+        .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-family: "Times New Roman", Times, serif; font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px; color: #222; }
+        .typing-container { height: 80px; font-size: 16px; line-height: 1.6; color: #222; margin-bottom: 30px; word-break: break-word; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .typing-text { border-right: 2px solid #222; white-space: pre-wrap; animation: blink 0.75s step-end infinite; }
+        @keyframes blink { from, to { border-color: transparent } 50% { border-color: #222; } }
+        .btn-action { background: rgba(255,255,255,0.50); border: 1px solid rgba(0,0,0,0.10); padding: 12px 30px; color: #222; border-radius: 16px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.4s cubic-bezier(0.25,1,0.5,1); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .btn-action:hover { background: rgba(255,255,255,0.75); transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+
+        .poetry-container { width: 63%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding-left: 5%; font-family: "Times New Roman", "Songti SC", "Noto Serif SC", "SimSun", "MS Mincho", "Batang", serif; }
+        .greeting-desktop { font-size: 22px; font-weight: 600; color: #222; margin-bottom: 12px; letter-spacing: 0.5px; opacity: 0.85; font-family: inherit; }
+        .poem-desktop { font-size: 50px; font-weight: 600; line-height: 1.5; color: #1a1a1a; text-shadow: 0 2px 8px rgba(255,255,255,0.3); font-family: "Times New Roman", "宋体", "SimSun", "Songti SC", "Noto Serif SC", "MS Mincho", "Batang", serif; }
+        .greeting-mobile, .poem-mobile { display: none; }
+
+        /* 点击反馈 */
+        .click-feedback { position: fixed; pointer-events: none; font-weight: bold; font-size: 20px; color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.3); z-index: 999999 !important; transform: translate(-50%, -50%); animation: popup 1.2s cubic-bezier(0.1,0.8,0.3,1) forwards; white-space: nowrap; }
+        @keyframes popup { 0% { opacity: 0; transform: translate(-50%, -30px) scale(0.5) rotate(-15deg); } 15% { opacity: 1; transform: translate(-50%, -70px) scale(1.2) rotate(5deg); } 100% { opacity: 0; transform: translate(-50%, -160px) scale(1) rotate(0deg); } }
+
+        /* 语言列表 */
+        .lang-list { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .lang-item { width: 80%; padding: 12px 20px; border-radius: 16px; background: rgba(255,255,255,0.25); border: 1px solid rgba(0,0,0,0.06); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 16px; color: #222; transition: all 0.3s; }
+        .lang-item:hover { background: rgba(255,255,255,0.50); transform: scale(1.05); }
+
+        /* Slider */
+        .slider-header { display: flex; background: rgba(0,0,0,0.04); border-radius: 14px; padding: 4px; margin-bottom: 20px; position: relative; }
+        .slider-btn { flex: 1; text-align: center; padding: 10px 0; cursor: pointer; z-index: 2; font-weight: 600; font-size: 14px; color: #333; transition: color 0.3s; }
+        .slider-bg { position: absolute; left: 4px; top: 4px; width: calc(50% - 4px); height: calc(100% - 8px); background: rgba(255,255,255,0.50); border-radius: 11px; transition: transform 0.4s cubic-bezier(0.25,1,0.5,1); z-index: 1; border: 1px solid rgba(255,255,255,0.40); }
+        .slider-content-wrapper { overflow: hidden; position: relative; height: 320px; }
+        .slider-track { display: flex; width: 200%; height: 100%; transition: transform 0.4s cubic-bezier(0.25,1,0.5,1); touch-action: none; }
+        .slider-pane { width: 50%; height: 100%; padding: 10px 5px; overflow-y: auto; color: #222; }
+
+        /* About */
+        .about-page-container { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+        .about-items { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .about-item { background: rgba(255,255,255,0.25); border: 1px solid rgba(0,0,0,0.06); padding: 12px 16px; border-radius: 12px; font-size: 14px; display: flex; align-items: center; gap: 10px; line-height: 1.6; color: #222; }
+        .about-item-merged { background: rgba(255,255,255,0.25); border: 1px solid rgba(0,0,0,0.06); padding: 16px 18px; border-radius: 12px; font-size: 14px; line-height: 1.8; display: flex; flex-direction: column; gap: 2px; flex: 1; justify-content: center; color: #222; }
+        .about-item-merged .last-line { color: rgba(0,0,0,0.45); font-style: italic; margin-top: 6px; }
+        .about-pagination { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .pag-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.15); cursor: pointer; transition: all 0.3s; }
+        .pag-dot.active { background: #333; transform: scale(1.3); }
+
+        /* Contact */
+        .contact-list { display: flex; flex-direction: column; gap: 15px; }
+        .contact-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.25); border: 1px solid rgba(0,0,0,0.06); padding: 12px 18px; border-radius: 14px; cursor: pointer; transition: background 0.3s; color: #222; }
+        .contact-item:hover { background: rgba(255,255,255,0.45); }
+        .contact-left { display: flex; align-items: center; gap: 12px; }
+        .contact-icon { width: 24px; height: 24px; fill: #333; }
+        .contact-hint { font-size: 14px; color: rgba(0,0,0,0.50); font-style: italic; letter-spacing: 0.3px; transition: color 0.2s; text-align: right; white-space: nowrap; }
+        .contact-item:hover .contact-hint { color: rgba(0,0,0,0.70); }
+        .subtext { font-size: 11px; opacity: 0.6; font-style: italic; display: block; margin-top: 2px; }
+
+        /* 日志 */
+        #logs { flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #222; }
+        .logs-title { font-size: 36px; font-weight: bold; margin-bottom: 40px; color: #222; text-shadow: 0 2px 8px rgba(255,255,255,0.3); }
+        .timeline-container { width: 100%; max-width: 900px; overflow-x: auto; display: flex; gap: 25px; padding: 20px 10px; cursor: grab; scroll-behavior: smooth; }
+        .timeline-container:active { cursor: grabbing; }
+        .timeline-container::-webkit-scrollbar { display: none; }
+        .event-card { min-width: 260px; max-width: 260px; padding: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 180px; flex-shrink: 0; color: #222; }
+        .event-time { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #222; border-bottom: 1px solid rgba(0,0,0,0.10); padding-bottom: 6px; width: 100%; }
+        .event-desc { font-size: 14px; line-height: 1.5; color: #333; }
+        .swipe-hint { margin-top: 30px; font-size: 14px; padding: 10px 25px; animation: float 2s ease-in-out infinite; color: #222; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        /* 博客 */
+        #blog { flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #222; gap: 30px; }
+        .blog-title { font-size: 36px; font-weight: bold; color: #222; text-shadow: 0 2px 8px rgba(255,255,255,0.3); width: 100%; }
+        .blog-card { width: 100%; max-width: 800px; display: flex; cursor: pointer; overflow: hidden; text-align: left; color: #222; flex-shrink: 0; }
+        .blog-card-left { width: 33.33%; padding: 30px; background: rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border-right: 1px solid rgba(0,0,0,0.06); line-height: 1.4; color: #222; }
+        .blog-card-right { width: 66.67%; padding: 30px; font-size: 15px; line-height: 1.7; color: #333; display: flex; align-items: center; }
+        .blog-more-btn { margin-top: 0; flex-shrink: 0; }
+
+        /* 页脚 */
+        footer { width: 100%; position: absolute; bottom: 0; left: 0; text-align: center; padding: 20px 0; z-index: 10; }
+        .easter-egg { font-size: 12px; color: rgba(0,0,0,0.30); cursor: default; transition: color 0.3s; }
+        .easter-egg:active { color: rgba(0,0,0,0.6); }
+
+        /* ============================================================
+           响应式设计
+           ============================================================ */
+        @media (max-width: 1024px) {
+            section { padding: 90px 6% 50px 6%; }
+            .poem-desktop { font-size: 34px; }
+            .greeting-desktop { font-size: 20px; }
+        }
+
+        @media (min-width: 769px) and (min-aspect-ratio: 4/3) {
+            #blog { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 30px; }
+            .blog-title { width: 100%; text-align: center; }
+            .blog-card { max-width: 700px; flex: 0 1 auto; }
+            .blog-more-btn { margin-top: 0; flex-shrink: 0; }
+        }
+
+        /* ===== 移动端 (<=768px) ===== */
+        @media (max-width: 768px) {
+            #custom-scrollbar-track { display: none; }
+
+            header { height: 52px; padding: 0 16px; }
+            .logo { font-size: 18px; }
+            .logo-text { display: none; }
+            .logo-img { display: block; height: 32px; }
+            .nav-label { display: none; }
+            nav a { font-size: 20px; padding: 6px 10px; }
+            nav { gap: 8px; }
+
+            #home { flex-direction: column; align-items: center; justify-content: center; padding-top: 70px; gap: 16px; min-height: 100vh; }
+            .profile-card { width: 100%; max-width: 420px; padding: 16px 16px 12px; min-height: auto; background: transparent !important; backdrop-filter: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
+            .profile-card.liquid-glass { background: transparent !important; backdrop-filter: none !important; border: none !important; box-shadow: none !important; }
+            .profile-card:hover { transform: none !important; background: transparent !important; }
+            .avatar-container { width: 150px; height: 150px; border-radius: 36px; margin-bottom: 16px; }
+            .profile-name { font-size: 28px; margin-bottom: 12px; }
+            .typing-container { height: 64px; font-size: 15px; margin-bottom: 12px; }
+            .btn-action { padding: 12px 28px; font-size: 15px; margin-top: 4px; }
+
+            .poetry-container { display: none !important; }
+            .greeting-mobile, .poem-mobile { display: block; width: 100%; text-align: center; font-family: "Times New Roman", "Songti SC", "Noto Serif SC", "SimSun", "MS Mincho", "Batang", serif; }
+            .greeting-mobile { font-size: 25px; font-weight:1000; color: #222; margin-bottom: 8px; opacity: 0.85; }
+            .poem-mobile { font-size: 30px; font-weight: 1000; line-height: 1.6; color: #1a1a1a; text-shadow: 0 2px 8px rgba(255,255,255,0.3); margin-bottom: 16px; }
+
+            #logs { padding-top: 60px; min-height: 70vh; }
+            .logs-title { font-size: 28px; margin-bottom: 24px; }
+            .event-card { min-width: 200px; max-width: 200px; height: 150px; padding: 16px; }
+            .event-time { font-size: 16px; }
+            .event-desc { font-size: 13px; }
+            .swipe-hint { font-size: 13px; padding: 8px 18px; }
+
+            #blog { flex-direction: column; padding-top: 40px; gap: 20px; min-height: 70vh; }
+            .blog-title { font-size: 28px; margin-bottom: 0; }
+            .blog-card { flex-direction: column; max-width: 100%; }
+            .blog-card-left { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 20px; font-size: 17px; }
+            .blog-card-right { width: 100%; padding: 20px; font-size: 14px; }
+            .blog-more-btn { margin-top: 0; }
+
+            /* ===== 移动端弹窗 ===== */
+            .modal-overlay { align-items: stretch; justify-content: stretch; }
+            .modal-card { width: 100% !important; max-width: 100% !important; height: 100% !important; max-height: 100% !important; border-radius: 0 !important; padding: 20px 24px 30px !important; transform: translateY(20px); opacity: 0; transition: transform 0.45s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.45s cubic-bezier(0.175,0.885,0.32,1.275); overflow-y: auto; display: flex; flex-direction: column; }
+
+            /* 头部竖向排列，返回按钮圆形玻璃遮罩 Liquid Glass风格 */
+            .modal-header {
+                display: flex;
+                flex-direction: column;                /* 竖向标题 */
+                align-items: flex-start;                /* 左对齐 */
+                justify-content: flex-start;   /* 顶部对齐 */
+                gap: 30px;              /* 标题与返回按钮间距 */
+                border-bottom: none !important;
+                padding-bottom: 12px;
+                margin-bottom: 16px;
+                flex-shrink: 0;
+            }
+            .modal-close { display: none !important; }
+            .modal-back {
+                display: flex !important;
+                margin-right: 0;
+                padding: 0;
+                border-radius: 50%;
+                width: 44px;
+                height: 44px;
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.35);
+                justify-content: center;
+                align-items: center;
+                font-size: 0;
+                flex-shrink: 0;
+            }
+            .modal-back svg {
+                width: 28px;
+                height: 28px;
+                fill: #007aff;
+            }
+            .modal-title {
+                font-size: 24px;
+                font-weight: 600;
+                color: #222;
+                padding-left: 0;
+            }
+
+            .slider-content-wrapper { height: auto; flex: 1; min-height: 0; overflow: hidden; }
+            .slider-track { height: auto; min-height: 320px; touch-action: none; transition: transform 0.4s cubic-bezier(0.25,1,0.5,1); width: 200%; display: flex; overflow: hidden; }
+            .slider-pane { width: 50%; height: auto; overflow-y: visible; padding: 4px 2px; flex-shrink: 0; }
+            .about-page-container { height: auto; min-height: 240px; }
+            .contact-list { gap: 12px; }
+            .contact-item { padding: 10px 14px; }
+            .contact-hint { font-size: 13px; }
+            .btn-action { width: 100%; max-width: 280px; }
+        }
+
+        /* ===== 9:16 及更瘦 ===== */
+        @media (max-aspect-ratio: 9/16) and (min-width: 300px) {
+            #home { justify-content: center; align-items: center; padding-top: 50px; gap: 10px; }
+            .profile-card { padding: 10px 12px 6px; max-width: 95%; }
+            .avatar-container { width: 150px; height: 150px; border-radius: 36px; margin-bottom: 12px; }
+            .profile-name { font-size: 28px; margin-bottom: 8px; }
+            .typing-container { height: 56px; font-size: 15px; margin-bottom: 8px; }
+            .greeting-mobile { font-size: 20px; margin-bottom: 6px; }
+            .poem-mobile { font-size: 28px; margin-bottom: 12px; }
+            .btn-action { padding: 12px 26px; font-size: 15px; }
+            #logs { min-height: 50vh; padding-bottom: 20px; padding-top: 40px; }
+            #blog { min-height: 50vh; padding-top: 10px; padding-bottom: 40px; }
+            #logs .logs-title { font-size: 24px; margin-bottom: 16px; }
+            #blog .blog-title { font-size: 24px; margin-bottom: 6px; }
+            .event-card { min-width: 170px; max-width: 170px; height: 130px; padding: 12px; }
+            .event-time { font-size: 15px; }
+            .event-desc { font-size: 12px; }
+            .blog-card-left { font-size: 15px; padding: 14px; }
+            .blog-card-right { font-size: 13px; padding: 14px; }
+            .blog-more-btn { font-size: 13px; padding: 8px 18px; }
+        }
+
+        @media (max-width: 480px) {
+            header { height: 44px; padding: 0 12px; }
+            .logo { font-size: 15px; }
+            .logo-img { height: 28px; }
+            nav a { font-size: 17px; padding: 4px 8px; }
+            nav { gap: 4px; }
+            #home { padding-top: 50px; }
+            .avatar-container { width: 130px; height: 130px; border-radius: 32px; }
+            .profile-name { font-size: 24px; }
+            .typing-container { height: 50px; font-size: 14px; }
+            .greeting-mobile { font-size: 18px; }
+            .poem-mobile { font-size: 24px; }
+            .btn-action { font-size: 14px; padding: 10px 24px; }
+            .profile-card { padding: 10px 10px 6px; }
+            .logs-title { font-size: 24px; }
+            .event-card { min-width: 160px; max-width: 160px; height: 130px; padding: 12px; }
+            .event-time { font-size: 14px; }
+            .event-desc { font-size: 12px; }
+            .blog-title { font-size: 24px; }
+            .blog-card-left { font-size: 15px; padding: 14px; }
+            .blog-card-right { font-size: 13px; padding: 14px; }
+            .modal-card { padding: 14px 16px 20px !important; }
+            .modal-title { font-size: 20px; }
+            .modal-back { width: 40px; height: 40px; }
+            .modal-back svg { width: 24px; height: 24px; }
+            .slider-btn { font-size: 13px; padding: 8px 0; }
+            .slider-content-wrapper { min-height: 260px; }
+            .about-item { font-size: 13px; padding: 10px 12px; }
+            .about-item-merged { font-size: 13px; padding: 12px 14px; }
+            .contact-item { padding: 8px 12px; }
+            .contact-hint { font-size: 12px; }
+            .contact-left { gap: 8px; }
+            .contact-icon { width: 20px; height: 20px; }
+            .subtext { font-size: 10px; }
+        }
+
+        @media (max-width: 360px) {
+            header { height: 38px; padding: 0 8px; }
+            .logo { font-size: 12px; }
+            .logo-img { height: 24px; }
+            nav a { font-size: 14px; padding: 3px 6px; }
+            nav { gap: 2px; }
+            #home { padding-top: 40px; }
+            .avatar-container { width: 100px; height: 100px; border-radius: 26px; margin-bottom: 8px; }
+            .profile-name { font-size: 20px; margin-bottom: 6px; }
+            .typing-container { height: 42px; font-size: 12px; margin-bottom: 6px; }
+            .greeting-mobile { font-size: 15px; margin-bottom: 4px; }
+            .poem-mobile { font-size: 20px; line-height: 1.5; margin-bottom: 10px; }
+            .btn-action { font-size: 12px; padding: 6px 16px; }
+            .profile-card { padding: 6px 6px 4px; }
+            .logs-title { font-size: 20px; margin-bottom: 12px; }
+            .event-card { min-width: 130px; max-width: 130px; height: 110px; padding: 10px; }
+            .event-time { font-size: 12px; margin-bottom: 6px; padding-bottom: 4px; }
+            .event-desc { font-size: 11px; }
+            .blog-title { font-size: 20px; }
+            .blog-card-left { font-size: 13px; padding: 12px; }
+            .blog-card-right { font-size: 12px; padding: 12px; }
+            .modal-card { padding: 10px 12px 16px !important; }
+            .modal-title { font-size: 18px; }
+            .modal-back { width: 36px; height: 36px; }
+            .modal-back svg { width: 20px; height: 20px; }
+            .slider-btn { font-size: 12px; padding: 6px 0; }
+            .slider-content-wrapper { min-height: 220px; }
+            .about-item { font-size: 12px; padding: 8px 10px; }
+            .about-item-merged { font-size: 12px; padding: 10px 12px; }
+            .contact-item { padding: 6px 10px; }
+            .contact-hint { font-size: 11px; }
+            .contact-left { gap: 6px; }
+            .contact-icon { width: 18px; height: 18px; }
+            .subtext { font-size: 9px; }
+            .swipe-hint { font-size: 11px; padding: 6px 14px; }
+        }
+
+        @media (max-aspect-ratio: 1/1) and (min-width: 300px) and (max-aspect-ratio: 1/1.2) {
+            #home { padding-top: 60px; gap: 10px; }
+            .profile-card { padding: 12px 16px 8px; }
+            .avatar-container { width: 130px; height: 130px; border-radius: 32px; margin-bottom: 12px; }
+            .profile-name { font-size: 24px; margin-bottom: 8px; }
+            .typing-container { height: 50px; font-size: 14px; margin-bottom: 8px; }
+            .poem-mobile { font-size: 26px; }
+            .greeting-mobile { font-size: 18px; }
+            .btn-action { padding: 10px 22px; font-size: 14px; }
+            .logs-title { font-size: 26px; margin-bottom: 20px; }
+            .event-card { min-width: 170px; max-width: 170px; height: 140px; padding: 14px; }
+            .blog-title { font-size: 26px; }
+            .modal-card { padding: 14px 18px 24px !important; }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .liquid-glass:hover { transform: none !important; background: rgba(255,255,255,0.35) !important; }
+            .profile-card.liquid-glass:hover { background: transparent !important; }
+            .btn-action:hover { transform: none !important; }
+            nav a:hover { transform: none !important; background: transparent !important; }
+            .contact-item:hover { background: rgba(255,255,255,0.25) !important; }
+            .lang-item:hover { transform: none !important; background: rgba(255,255,255,0.25) !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 自定义滚动条 -->
+    <div id="custom-scrollbar-track"><div id="custom-scrollbar-thumb"></div></div>
+
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="logo" id="logo-title">
+            <span class="logo-text">Ethan Lin</span>
+            <img class="logo-img" src="https://pic1.imgdb.cn/i/033qq8bPEsBY7dqXlXwI2Y.png" alt="Ethan Logo">
+        </div>
+        <nav id="main-nav">
+            <a onclick="showLanguageModal()">🌍 <span class="nav-label" data-i18n="nav_lang">语言</span></a>
+            <a onclick="scrollToSection('logs')" id="nav-logs">📅 <span class="nav-label" data-i18n="nav_logs">日志</span></a>
+            <a onclick="scrollToSection('blog')" id="nav-blog">✍️ <span class="nav-label" data-i18n="nav_blog">博客</span></a>
+            <a href="https://www.123pan.cn/s/1cWBTd-Wbm6H" target="_blank">📦 <span class="nav-label" data-i18n="nav_storage">小库</span></a>
+        </nav>
+    </header>
+
+    <!-- 主滚动内容（保持不变） -->
+    <div id="viewport">
+        <section id="home">
+            <div class="profile-card liquid-glass">
+                <div class="avatar-container"><img src="https://i.czl.net/b2/img/yk/6a5733e9dcdfd.jpg" alt="Ethan Lin"></div>
+                <div class="profile-name">Ethan Lin</div>
+                <div class="typing-container"><span class="typing-text" id="typing-text"></span></div>
+                <div class="greeting-mobile" id="greeting-mobile">Hi, My new friends!</div>
+                <div class="poem-mobile" id="poem-mobile">感激车站里，尚有月台<br>能让我们满足到流泪。</div>
+                <button class="btn-action" onclick="openPlayModal()" data-i18n="btn_play">找我玩耍</button>
+            </div>
+            <div class="poetry-container">
+                <div class="greeting-desktop" id="greeting-desktop">Hi, My new friends!</div>
+                <div class="poem-desktop" id="poem-desktop">感激车站里，尚有月台<br>能让我们满足到流泪。</div>
+            </div>
+        </section>
+
+        <section id="logs">
+            <div class="logs-title" data-i18n="logs_title">小站大事记</div>
+            <div class="timeline-container" id="timeline">
+                <div class="event-card liquid-glass"><div class="event-time">2018.8</div><div class="event-desc" data-i18n="log_1">建立域名miku.welby.cc</div></div>
+                <div class="event-card liquid-glass"><div class="event-time">2019.7</div><div class="event-desc" data-i18n="log_2">添加我的联系方式</div></div>
+                <div class="event-card liquid-glass"><div class="event-time">2021.1</div><div class="event-desc" data-i18n="log_3">注册了b站账号</div></div>
+                <div class="event-card liquid-glass"><div class="event-time">2022.5</div><div class="event-desc" data-i18n="log_4">网站重新启用 之后断断续续的启动和关闭服务器</div></div>
+                <div class="event-card liquid-glass"><div class="event-time">2025.5.1</div><div class="event-desc" data-i18n="log_5">服务器损坏 将托管的重担交给热铁盒网页托管 重新购买域名welby{$rthSuffix} 网页源代码全部推倒重新构建</div></div>
+                <div class="event-card liquid-glass"><div class="event-time">2026.7</div><div class="event-desc" data-i18n="log_6">代码全部重构 界面更加美观 添加多语言支持 更改域名为1saen{$rthSuffix} 小站似乎变得有用了欸</div></div>
+            </div>
+            <div class="swipe-hint liquid-glass" data-i18n="swipe_hint"> 左右滑动来查看 </div>
+        </section>
+
+        <section id="blog">
+            <div class="blog-title" data-i18n="blog_title">我的博客</div>
+            <div class="blog-card liquid-glass" onclick="window.open('https://www.coolapk.com/feed/63316458', '_blank')">
+                <div class="blog-card-left" data-i18n="blog_card_title">谈谈我与小米4s的故事：镌刻青春的时光胶囊</div>
+                <div class="blog-card-right" data-i18n="blog_card_desc">这是一段属于我和小米4S的独特回忆。从当年的极客折腾精神，到岁月流转之下的情怀承载。一部手机，不仅是冰冷的硬件组合，它更是装载我们璀璨青春、无数难忘日常的时光胶囊。点我查看完整故事...</div>
+            </div>
+            <button class="btn-action blog-more-btn" onclick="window.open('https://www.coolapk.com/u/21354034', '_blank')" data-i18n="btn_more_blog">戳我来查看更多</button>
+        </section>
+
+        <footer><div class="easter-egg" onclick="window.open('https://1saen{$rthSuffix}/snake.html', '_blank')">本页面由热铁盒网页托管提供支持 感谢毛若昕和杨尚臻的支持</div></footer>
+    </div>
+
+    <!-- 语言弹窗 -->
+    <div class="modal-overlay" id="lang-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <button class="modal-back" onclick="closeLanguageModalDirect()" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                <div class="modal-title" data-i18n="modal_lang_title">选择语言</div>
+                <button class="modal-close" onclick="closeLanguageModalDirect()">×</button>
+            </div>
+            <div class="lang-list">
+                <div class="lang-item" onclick="selectLang('zh')">🇨🇳 简体中文</div>
+                <div class="lang-item" onclick="selectLang('zh_tw')">🇭🇰 繁體中文</div>
+                <div class="lang-item" onclick="selectLang('en')">🇬🇧 English</div>
+                <div class="lang-item" onclick="selectLang('ja')">🇯🇵 日本語</div>
+                <div class="lang-item" onclick="selectLang('ko')">🇰🇷 한국어</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 玩耍弹窗 -->
+    <div class="modal-overlay" id="play-modal">
+        <div class="modal-card" style="width: 550px;">
+            <div class="modal-header">
+                <button class="modal-back" onclick="closePlayModalDirect()" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                <div class="modal-title" data-i18n="modal_play_title">找我玩耍</div>
+                <button class="modal-close" onclick="closePlayModalDirect()">×</button>
+            </div>
+            <div class="slider-header">
+                <div class="slider-bg" id="slider-indicator"></div>
+                <div class="slider-btn" onclick="switchTab(0)" data-i18n="tab_about">关于该咸鱼</div>
+                <div class="slider-btn" onclick="switchTab(1)" data-i18n="tab_chat">找咸鱼聊天</div>
+            </div>
+            <div class="slider-content-wrapper">
+                <div class="slider-track" id="slider-track">
+                    <div class="slider-pane">
+                        <div class="about-page-container">
+                            <div class="about-items" id="about-content"></div>
+                            <div class="about-pagination">
+                                <span class="pag-dot active" onclick="switchAboutPage(0)"></span>
+                                <span class="pag-dot" onclick="switchAboutPage(1)"></span>
+                                <span class="pag-dot" onclick="switchAboutPage(2)"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slider-pane">
+                        <div class="contact-list">
+                            <div class="contact-item" onclick="copyPhone('+8617698883360')">
+                                <div class="contact-left"><svg class="contact-icon" viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg><div style="font-size:14px;font-weight:bold;"><span data-i18n="contact_phone">手机</span></div></div>
+                                <span class="contact-hint">+86 (176) 9888-3360</span>
+                            </div>
+                            <div class="contact-item" onclick="copyPhone('+6596197777')">
+                                <div class="contact-left"><svg class="contact-icon" viewBox="0 0 24 24"><path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/></svg><div><div style="font-size:14px;font-weight:bold;"><span data-i18n="contact_residence">住宅</span></div><span class="subtext" data-i18n="contact_residence_sub">担心高价漫游费喔</span></div></div>
+                                <span class="contact-hint">+65 9619-7777</span>
+                            </div>
+                            <div class="contact-item" onclick="copyPhone('zhuzhu198413117')">
+                                <div class="contact-left"><svg class="contact-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,14.54 18.82,16.8 17,18.29V20H15.29C14.3,20.61 13.19,21 12,21C7.03,21 3,16.97 3,12C3,7.03 7.03,3 12,4M13,6A1,1 0 0,0 12,7A1,1 0 0,0 13,8A1,1 0 0,0 14,7A1,1 0 0,0 13,6M9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9M15,9A1,1 0 0,0 14,10A1,1 0 0,0 15,11A1,1 0 0,0 16,10A1,1 0 0,0 15,9Z"/></svg><div style="font-size:14px;font-weight:bold;"><span data-i18n="contact_wechat">微信</span></div></div>
+                                <span class="contact-hint">zhuzhu198413117</span>
+                            </div>
+                            <div class="contact-item" onclick="window.open('https://space.bilibili.com/1632750306', '_blank')">
+                                <div class="contact-left"><svg class="contact-icon" viewBox="0 0 24 24"><path d="M7.14,2.18L8.55,3.59L5.3,6.84L5.27,6.87C5.11,7.05 5,7.28 5,7.55V17.5A2.5,2.5 0 0,0 7.5,20H16.5A2.5,2.5 0 0,0 19,17.5V7.5C19,7.22 18.88,6.97 18.69,6.79L15.45,3.55L16.86,2.14L20.1,5.38C20.66,5.93 21,6.7 21,7.5V17.5A4.5,4.5 0 0,1 16.5,22H7.5A4.5,4.5 0 0,1 3,17.5V7.5C3,6.71 3.32,5.94 3.88,5.38L7.14,2.18M8,10H10V14H8V10M14,10H16V14H14V10Z"/></svg><div style="font-size:14px;font-weight:bold;">Bilibili</div></div>
+                                <span class="contact-hint" data-i18n="contact_bili">戳我查看</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 多语言数据 =====
+        const translations = {
+            zh: {
+                nav_lang: "语言", nav_logs: "日志", nav_blog: "博客", nav_storage: "小库",
+                btn_play: "找我玩耍", logs_title: "小站大事记", swipe_hint: " 左右滑动来查看 ",
+                blog_title: "我的博客",
+                blog_card_title: "谈谈我与小米4s的故事：镌刻青春的时光胶囊",
+                blog_card_desc: "这是一段属于我和小米4S的独特回忆。从当年的极客折腾精神，到岁月流转之下的情怀承载。一部手机，不仅是冰冷的硬件组合，它更是装载我们璀璨青春、无数难忘日常的时光胶囊。点我查看完整故事...",
+                btn_more_blog: "戳我来查看更多",
+                modal_lang_title: "选择语言", modal_play_title: "找我玩耍",
+                tab_about: "关于该咸鱼", tab_chat: "找咸鱼聊天",
+                contact_phone: "手机", contact_residence: "住宅", contact_residence_sub: "担心高价漫游费喔",
+                contact_wechat: "微信", contact_bili: "戳我查看",
+                greeting: "Hi, My new friends!",
+                poem: "感激车站里，尚有月台<br>能让我们满足到流泪。",
+                log_1: "建立域名miku.welby.cc",
+                log_2: "添加我的联系方式",
+                log_3: "注册了b站账号",
+                log_4: "网站重新启用 之后断断续续的启动和关闭服务器",
+                log_5: "服务器损坏 将托管的重担交给热铁盒网页托管 重新购买域名welby{$rthSuffix} 网页源代码全部推倒重新构建",
+                log_6: "代码全部重构 界面更加美观 添加多语言支持 更改域名为1saen{$rthSuffix} 小站似乎变得有用了欸",
+                cute_phrases: ["🌸 樱花开啦~", "✨ 闪闪发光~", "💫 吧嗒吧嗒~", "🍡 吃口团子~", "🐱 喵呜一声~", "🐳 咕噜咕噜~", "⭐ 星星眨眼~", "🍀 好运连连~", "🐰 兔兔跳跳~", "🍦 要融化喵~"],
+                annoying_phrases: ["⚠️ 别点啦！", "💢 再玩就玩坏啦！", "😵 我好晕喔...", "💤 让我歇会~", "🛑 警告！指头痛痛！"]
+            },
+            zh_tw: {
+                nav_lang: "語言", nav_logs: "日誌", nav_blog: "部落格", nav_storage: "小庫",
+                btn_play: "找我玩耍", logs_title: "小站大事記", swipe_hint: " 左右滑動來查看 ",
+                blog_title: "我的部落格",
+                blog_card_title: "談談我與小米4s的故事：鐫刻青春的時光膠囊",
+                blog_card_desc: "這是一段屬於我和小米4S的獨特回憶。從當年的極客折騰精神，到歲月流轉之下的情懷承載。一部手機，不僅是冰冷的硬體組合，它更是裝載我們璀璨青春、無數難忘日常的時光膠囊。點我查看完整故事...",
+                btn_more_blog: "戳我來查看更多",
+                modal_lang_title: "選擇語言", modal_play_title: "找我玩耍",
+                tab_about: "關於該咸魚", tab_chat: "找咸魚聊天",
+                contact_phone: "手機", contact_residence: "住宅", contact_residence_sub: "擔心高價漫遊費喔",
+                contact_wechat: "微信", contact_bili: "戳我查看",
+                greeting: "Hi, My new friends!",
+                poem: "感激車站裡，尚有月台<br>能讓我們滿足到流淚。",
+                log_1: "建立域名miku.welby.cc",
+                log_2: "添加我的聯繫方式",
+                log_3: "註冊了b站賬號",
+                log_4: "網站重新啟用 之後斷斷續續的啟動和關閉服務器",
+                log_5: "服務器損壞 將託管的重擔交給熱鐵盒網頁託管 重新購買域名 網頁源代碼全部推倒重新構建",
+                log_6: "代碼全部重構 界面更加美觀 添加多語言支持 小站似乎變得有用瞭欸",
+                cute_phrases: ["🌸 櫻花開啦~", "✨ 閃閃發光~", "💫 吧嗒吧嗒~", "🍡 吃口糰子~", "🐱 喵嗚一聲~", "🐳 咕嚕咕嚕~", "⭐ 星星眨眼~", "🍀 好運連連~", "🐰 兔兔跳跳~", "🍦 要融化啦~"],
+                annoying_phrases: ["⚠️ 別點啦！", "💢 再玩就玩壞啦！", "😵 我好暈喔...", "💤 讓我歇會~", "🛑 警告！指頭痛痛！"]
+            },
+            en: {
+                nav_lang: "Language", nav_logs: "Logs", nav_blog: "Blog", nav_storage: "Library",
+                btn_play: "Play with me", logs_title: "Major Station Events", swipe_hint: " Swipe Left/Right to View ",
+                blog_title: "My Blog",
+                blog_card_title: "Story of Xiaomi 4S: A Time Capsule of Youth",
+                blog_card_desc: "A unique memoir of my time with the Xiaomi 4S. From extreme tweaking in my geek years to a capsule for warm memories of my youth. Read full story...",
+                btn_more_blog: "Click for more",
+                modal_lang_title: "Select Language", modal_play_title: "Play With Me~",
+                tab_about: "About this fresh fish", tab_chat: "Chat With fish",
+                contact_phone: "Mobile", contact_residence: "Home", contact_residence_sub: "Watch out for high roaming fees~",
+                contact_wechat: "WeChat", contact_bili: "Check out my profile",
+                greeting: "Hi, My new friends!",
+                poem: "I love it when I catch you looking at me,<br>then you smile and look away.",
+                log_1: "Established domain miku.welby.cc",
+                log_2: "Added my contact info",
+                log_3: "Registered bilibili account",
+                log_4: "Re-enabled website, intermittently operating server",
+                log_5: "Server crashed. Moved hosting load to Remitee. Bought new domain, recoded site.",
+                log_6: "Complete codebase rebuild. Prettier UI with multilanguage support. Web looks actually useful now!",
+                cute_phrases: ["🌸 Cherry blossoms!~", "✨ Sparkle~", "💫 Pitter-patter~", "🍡 Sweet dumpling~", "🐱 Meow~", "🐳 Blub blub~", "⭐ Twinkle~", "🍀 Good luck~", "🐰 Hop hop~", "🍦 Ice cream melting~"],
+                annoying_phrases: ["⚠️ Stop it!", "💢 You'll break me!", "😵 I'm dizzy...", "💤 Let me rest~", "🛑 Warning! Ouch!"]
+            },
+            ja: {
+                nav_lang: "言語", nav_logs: "ログ", nav_blog: "ブログ", nav_storage: "倉庫",
+                btn_play: "遊ぼうましょう！", logs_title: "当サイトの歩み", swipe_hint: " スワイプして表示 ",
+                blog_title: "マイブログ",
+                blog_card_title: "小米4sと私の物語：青春を刻んだタイムカプセル",
+                blog_card_desc: "Xiaomi 4Sと過ごしたあの素晴らしい日々の回顧録。極限のギークカスタマイズから、甘酸っぱい青春の思い出まで。クリックして続きを読む...",
+                btn_more_blog: "もっと見る",
+                modal_lang_title: "言語選択", modal_play_title: "遊ぼうよ！",
+                tab_about: "この小さい野生ばか", tab_chat: "野生ばかと遊ぶ",
+                contact_phone: "携帯", contact_residence: "自宅", contact_residence_sub: "高額ローミングにご注意くださいね〜",
+                contact_wechat: "WeChat", contact_bili: "クリックして確認",
+                greeting: "Hi, My new friends!",
+                poem: "あなたの今日の楽しみを祈り、<br>明日の楽しみは私に明日の祝福を残します。",
+                log_1: "ドメイン miku.welby.cc を開設",
+                log_2: "連絡先情報を追加",
+                log_3: "Bilibiliのアカウントを開設",
+                log_4: "サイト再稼働、サーバーを断続的に運用",
+                log_5: "サーバーが故障。ホスティングをRemiteeに委託、新規ドメイン購入、全コードを刷新",
+                log_6: "完全なコード再構成。より美しいインターフェースと多言語対応。少し役に立ちそうだね！",
+                cute_phrases: ["🌸 桜が咲いた～", "✨ キラキラ～", "💫 ぱたぱた～", "🍡 団子を食べよう～", "🐱 にゃん～", "🐳 ぐるぐる～", "⭐ 星が瞬く～", "🍀 幸運を～", "🐰 うさぎぴょんぴょん～", "🍦 アイスが溶ける～"],
+                annoying_phrases: ["⚠️ やめて！", "💢 壊しちゃうよ！", "😵 めまいがする...", "💤 ちょっと休ませて～", "🛑 警告！痛い！"]
+            },
+            ko: {
+                nav_lang: "언어", nav_logs: "로그", nav_blog: "블로그", nav_storage: "보관함",
+                btn_play: "나랑 놀자", logs_title: "홈페이지 타임라인", swipe_hint: " 좌우로 슬라이드하여 보기 ",
+                blog_title: "내 블로그",
+                blog_card_title: "샤오미 4s와 나의 이야기: 청춘을 새긴 타임캡슐",
+                blog_card_desc: "샤오미 4S와의 특별한 추억입니다. 당시 기크 정신으로 시작해서 오랜 시간 동안의 감성 저장소가 되기까지. 클릭하고 전체 스토리 읽기...",
+                btn_more_blog: "더 알아보기",
+                modal_lang_title: "언어 선택", modal_play_title: "나랑 놀기",
+                tab_about: "이 바보에 관해서", tab_chat: "야생 바보랑 놀기",
+                contact_phone: "휴대폰", contact_residence: "집전화", contact_residence_sub: "로밍 요금 폭탄에 주의하세요!",
+                contact_wechat: "위챗", contact_bili: "보러 가기",
+                greeting: "Hi, My new friends!",
+                poem: "첫사랑은 봄날의 꽃, <br>잔잔이 핀다가 빨리 지는다.",
+                log_1: "도메인 miku.welby.cc 등록",
+                log_2: "연락처 정보 추가",
+                log_3: "Bilibili 계정 등록",
+                log_4: "홈페이지 리뉴얼 가동, 서버 간헐적 가동",
+                log_5: "서버 손상으로 Remitee 웹 호스팅으로 이전, 새 도메인 구매 및 제로베이스 재개발",
+                log_6: "코드 전면 재구축. 더욱 화려한 UI와 다국어 지원 적용. 드디어 쓸만해졌네요!",
+                cute_phrases: ["🌸 벚꽃이 피었네~", "✨ 반짝반짝~", "💫 두근두근~", "🍡 경단 먹자~", "🐱 야옹~", "🐳 부글부글~", "⭐ 별이 반짝~", "🍀 행운이 가득~", "🐰 토끼 폴짝~", "🍦 아이스크림 녹는 중~"],
+                annoying_phrases: ["⚠️ 그만! ", "💢 망가뜨리겠어!", "😵 어지러워...", "💤 좀 쉬게 해줘~", "🛑 경고! 아파!"]
+            }
+        };
+
+        let currentLang = 'zh';
+
+        function selectLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) el.innerHTML = translations[lang][key];
+            });
+            document.getElementById('greeting-desktop').textContent = translations[lang].greeting;
+            document.getElementById('poem-desktop').innerHTML = translations[lang].poem;
+            document.getElementById('greeting-mobile').textContent = translations[lang].greeting;
+            document.getElementById('poem-mobile').innerHTML = translations[lang].poem;
+            renderAboutList();
+            resetTyping();
+            closeLanguageModalDirect();
+        }
+
+        // ===== 打字机 =====
+        const typingData = [
+            { lang: "zh", steps: ["y","yi","yi'","yi'g","yi'ge","一个","一个n","一个nu","一个nu'","一个nu'l","icon_nl","一个nu'li","一个努力","一个努力z","一个努力zh","一个努力zho","一个努力zhon","一个努力zhong","一个努力zhong'","一个努力zhong'd","一个努力zhong'de","一个努力中的","一个努力中的x","一个努力中的xi","一个努力中的xia","一个努力中的xian","一个努力中的xian'","一个努力中的xian'y","一个努力中的xian'yu","一个努力中的咸鱼"] },
+            { lang: "ja", steps: ["が","がん","がんば","がんばっ","がんばって","頑張って","頑張ってべ","頑張ってべん","頑張ってべんき","頑張ってべんきょ","頑張って勉強","頑張って勉強し","頑張って勉強して","頑張って勉強している","頑張って勉強しているお","頑張って勉強しているおち","頑張って勉強しているおちこ","頑張って勉強しているおちこぼ","頑張って勉強しているおちこぼれ","頑張って勉強している落ちこぼれ"] },
+            { lang: "en", steps: ["A","A ","A f","A fr","A fre","A fres","A fresh","A fresh ","A fresh f","A fresh fi","A fresh fis","A fresh fish","A fresh fish ","A fresh fish t","A fresh fish tr","A fresh fish try","A fresh fish tryi","A fresh fish tryin","A fresh fish trying","A fresh fish trying ","A fresh fish trying h","A fresh fish trying ha","A fresh fish trying har","A fresh fish trying hard","A fresh fish trying hard ","A fresh fish trying hard t","A fresh fish trying hard to","A fresh fish trying hard to ","A fresh fish trying hard to s","A fresh fish trying hard to st","A fresh fish trying hard to stu","A fresh fish trying hard to stud","A fresh fish trying hard to study"] },
+            { lang: "ko", steps: ["ㅇ","여","열","열ㅅ","열시","열심","열심히","열심히 ","열심히 ㄱ","열심히 고","열심히 공","열심히 공부","열심히 공부하","열심히 공부하는","열심히 공부하는 ","열심히 공부하는 ㄱ","열심히 공부하는 게","열심히 공부하는 게ㅇ","열심히 공부하는 게으","열심히 공부하는 게으ㄹ","열심히 공부하는 게으르","열심히 공부하는 게으른","열심히 공부하는 게으른 ","열심히 공부하는 게으른 ㅅ","열심히 공부하는 게으른 사","열심히 공부하는 게으른 사람"] },
+            { lang: "ar", steps: ["س","سم","سمك","سمكة","سمكة ","سمكة م","سمكة مم","سمكة ممل","سمكة مملح","سمكة مملحة","سمكة مملحة ","سمكة مملحة ت","سمكة مملحة تح","سمكة مملحة تحا","سمكة مملحة تحاو","سمكة مملحة تحاول","سمكة مملحة تحاول ","سمكة مملحة تحاول ج","سمكة مملحة تحاول جا","سمكة مملحة تحاول جاه","سمكة مملحة تحاول جاهد","سمكة مملحة تحاول جاهدة","سمكة مملحة تحاول جاهدة ","سمكة مملحة تحاول جاهدة ا","سمكة مملحة تحاول جاهدة ال","سمكة مملحة تحاول جاهدة الد","سمكة مملحة تحاول جاهدة الدر","سمكة مملحة تحاول جاهدة الدرا","سمكة مملحة تحاول جاهدة الدراس","سمكة مملحة تحاول جاهدة الدراسة"] }
+        ];
+
+        let currentTypingIdx = 0, currentStepIdx = 0, isDeleting = false, typingTimeout = null;
+        const typingSpeed = 100, deleteSpeed = 50, pauseTime = 3000;
+        function doTyping() {
+            const typingEl = document.getElementById('typing-text');
+            const phrase = typingData[currentTypingIdx];
+            if (!isDeleting) {
+                if (currentStepIdx < phrase.steps.length) {
+                    typingEl.textContent = phrase.steps[currentStepIdx];
+                    currentStepIdx++;
+                    typingTimeout = setTimeout(doTyping, typingSpeed);
+                } else { isDeleting = true; typingTimeout = setTimeout(doTyping, pauseTime); }
+            } else {
+                if (currentStepIdx > 0) {
+                    currentStepIdx--;
+                    typingEl.textContent = phrase.steps[currentStepIdx];
+                    typingTimeout = setTimeout(doTyping, deleteSpeed);
+                } else { isDeleting = false; currentTypingIdx = (currentTypingIdx + 1) % typingData.length; typingTimeout = setTimeout(doTyping, 500); }
+            }
+        }
+        function resetTyping() { clearTimeout(typingTimeout); currentStepIdx = 0; isDeleting = false; doTyping(); }
+
+        // ===== 点击反馈 =====
+        function showClickFeedback(text, x, y) {
+            const fb = document.createElement('div');
+            fb.className = 'click-feedback';
+            fb.textContent = text;
+            fb.style.left = (x || window.innerWidth/2) + 'px';
+            fb.style.top = (y || window.innerHeight/2) + 'px';
+            document.body.appendChild(fb);
+            fb.addEventListener('animationend', () => fb.remove());
+        }
+        let clickCount = 0, clickTimer = null;
+        document.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('button') || e.target.closest('a') ||
+                e.target.closest('.contact-item') || e.target.closest('.lang-item') ||
+                e.target.closest('.pag-dot') || e.target.closest('.modal-close') ||
+                e.target.closest('.modal-back') || e.target.closest('.slider-btn')) return;
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { clickCount = 0; }, 4000);
+            const langData = translations[currentLang];
+            let phrase = "";
+            if (clickCount < 8) {
+                const arr = langData.cute_phrases || translations.zh.cute_phrases;
+                phrase = arr[Math.floor(Math.random() * arr.length)];
+            } else {
+                const arr = langData.annoying_phrases || translations.zh.annoying_phrases;
+                phrase = arr[Math.floor(Math.random() * arr.length)];
+            }
+            showClickFeedback(phrase, e.clientX, e.clientY);
+        });
+
+        // ===== 复制电话 =====
+        function copyPhone(raw) {
+            navigator.clipboard.writeText(raw).then(() => showClickFeedback('📋 复制成功~'))
+            .catch(() => {
+                const input = document.createElement('input');
+                input.value = raw;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+                showClickFeedback('📋 复制成功~');
+            });
+        }
+
+        // ===== 自定义滚动条 =====
+        const viewport = document.getElementById('viewport');
+        const scrollTrack = document.getElementById('custom-scrollbar-track');
+        const scrollThumb = document.getElementById('custom-scrollbar-thumb');
+        function updateScrollbar() {
+            const totalHeight = viewport.scrollHeight - viewport.clientHeight;
+            if (totalHeight <= 0) { scrollThumb.style.height = '0%'; return; }
+            const ratio = viewport.clientHeight / viewport.scrollHeight;
+            const thumbHeight = Math.max(30, scrollTrack.clientHeight * ratio);
+            scrollThumb.style.height = `${thumbHeight}px`;
+            const scrollRatio = viewport.scrollTop / totalHeight;
+            const maxThumbTop = scrollTrack.clientHeight - thumbHeight;
+            scrollThumb.style.top = `${scrollRatio * maxThumbTop}px`;
+        }
+        viewport.addEventListener('scroll', updateScrollbar);
+        window.addEventListener('resize', updateScrollbar);
+
+        let isDraggingScroll = false, startY, startScrollTop;
+        scrollThumb.addEventListener('pointerdown', (e) => {
+            isDraggingScroll = true;
+            startY = e.clientY;
+            startScrollTop = viewport.scrollTop;
+            scrollThumb.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        });
+        scrollThumb.addEventListener('pointermove', (e) => {
+            if (!isDraggingScroll) return;
+            const deltaY = e.clientY - startY;
+            const totalHeight = viewport.scrollHeight - viewport.clientHeight;
+            const ratio = viewport.clientHeight / viewport.scrollHeight;
+            const thumbHeight = Math.max(30, scrollTrack.clientHeight * ratio);
+            const maxThumbTop = scrollTrack.clientHeight - thumbHeight;
+            const scrollMoveAmount = (deltaY / maxThumbTop) * totalHeight;
+            viewport.scrollTop = startScrollTop + scrollMoveAmount;
+        });
+        scrollThumb.addEventListener('pointerup', (e) => {
+            isDraggingScroll = false;
+            scrollThumb.releasePointerCapture(e.pointerId);
+        });
+
+        // ===== 模态框 =====
+        function showLanguageModal() { document.getElementById('lang-modal').classList.add('active'); }
+        function closeLanguageModalDirect() { document.getElementById('lang-modal').classList.remove('active'); }
+        function openPlayModal() { document.getElementById('play-modal').classList.add('active'); switchTab(0); switchAboutPage(0); }
+        function closePlayModalDirect() { document.getElementById('play-modal').classList.remove('active'); }
+        document.getElementById('lang-modal').addEventListener('pointerdown', (e) => {
+            if (e.target === document.getElementById('lang-modal')) closeLanguageModalDirect();
+        });
+        document.getElementById('play-modal').addEventListener('pointerdown', (e) => {
+            if (e.target === document.getElementById('play-modal')) closePlayModalDirect();
+        });
+
+        // ===== Slider =====
+        function switchTab(index) {
+            document.getElementById('slider-track').style.transform = `translateX(-${index * 50}%)`;
+            document.getElementById('slider-indicator').style.transform = `translateX(${index * 100}%)`;
+        }
+
+        // ===== About 分页 =====
+        const aboutPages = {
+            zh: [
+                ["🌍 流浪在南极的小小咸鱼", "☕ 每天需要三千杯咖啡续命", "🤔咖啡怎么这么坏呀", "🎨 多语言文化爱好者", "🐱梦想是变成一只猫猫()"],
+                ["爱好计算机和语言学 会学习一切感兴趣的东西", "略懂一丁点英语和日语(三脚猫", "本喵爱死交朋友了","活着真好啊"],
+                ["在我眼里, 没什么事情是不能解决的", "如果有, 那就重试几十次甚至是上百次。", "落花有意, 流水无情。"]
+            ],
+            zh_tw: [
+                ["🌍 流浪在南極的小小鹹魚", "☕ 每天需要三千杯咖啡續命", "🤔咖啡怎麼這麼壞呀", "🎨 多語言文化愛好者", "🐱夢想是變成一只貓貓()"],
+                ["愛好計算機和語言學 會學習一切感興趣的東西", "略懂一點英語和日語(三腳貓", "本喵喜歡死交朋友了","活著真好啊"],
+                ["在我眼裡, 沒什麼事情是不能解決的", "如果有, 那就重試幾十次甚至是上百次。", "落花有意, 流水無情。"]
+            ],
+            en: [
+                ["🌍 A fresh fish in Antarctica", "☕ Relies on 3 thousands cups of coffee daily to survive", "🤔 Why is the coffee so bad?", "🎨 Multilingual culture enthusiast", "🐱 Dream of becoming a cute cat()"],
+                ["Passionate about computer science & linguistics, exploring everything of interest.", "Knows a little bit of English and Japanese.", "Always love to making new friends!","Really great to be alive"],
+                ["In my eyes, nothing is truly impossible.", "If it is, just retry dozens or hundreds of times.", "Petals fall with intent, but the water flows without feeling."]
+            ],
+            ja: [
+                ["🌍 南極をさまようなちいさいばか", "☕ 毎日三千本のコーヒーが生きるための生命線", "🤔 コーヒーはなぜこんなにまずいのなあ？", "🎨 多言語文化を好き", "🐱 夢はかわいいいいいい猫になること()"],
+                ["コンピュータサイエンスと言語学を愛し、興味のあることは何でも学びます。", "英語と日本語を少しだけ理解できます。", "新しい友達を作るのが大好きです！","生きてるってほんとにいいね"],
+                ["私の目には、解決できないことは何もないように見えます。", "もしあれば、何十回、何百回でも再試行するだけです。", "散る花に思いあれど、流れる水には情けなし。"]
+            ],
+            ko: [
+                ["🌍 남극을 떠도는 작은 소금물고기", "☕ 매일 3000잔의 커피로 연명해야 해", "🤔 커피가 왜 이렇게 장난꾸러기야", "🎨 다국어 문화 애호가", "🐱 꿈은 귀여운 고양이가 되는 거야()"],
+                ["컴퓨터 공학과 언어학을 좋아하며 관심 있는 모든 것을 공부합니다.", "영어와 일본어를 조금 구사할 수 있습니다.", "동시에 사람 사귀고 친구가 되는 것을 정말 좋아합니다!","살아 있어서 정말 좋아요"],
+                ["내 눈에는 해결할 수 없는 일은 없어 보인다.", "만약 있다면, 수십 번 혹은 수백 번 다시 시도하면 된다.", "낙화는 의도가 있으나 흐르는 물은 무심하구나."]
+            ]
+        };
+        let currentAboutPage = 0;
+        function renderAboutList() {
+            const container = document.getElementById('about-content');
+            container.innerHTML = '';
+            const items = aboutPages[currentLang][currentAboutPage];
+            if (currentAboutPage === 2) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'about-item-merged';
+                let html = '';
+                for (let i = 0; i < items.length; i++) {
+                    if (i === items.length - 1) html += `<div class="last-line">${items[i]}</div>`;
+                    else html += `<div>${items[i]}</div>`;
+                }
+                wrapper.innerHTML = html;
+                container.appendChild(wrapper);
+            } else {
+                items.forEach(text => {
+                    const div = document.createElement('div');
+                    div.className = 'about-item';
+                    div.textContent = text;
+                    container.appendChild(div);
+                });
+            }
+            const dots = document.querySelectorAll('.pag-dot');
+            dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentAboutPage));
+        }
+        function switchAboutPage(idx) { currentAboutPage = idx; renderAboutList(); }
+
+        // ===== 时间线拖拽 =====
+        const timeline = document.getElementById('timeline');
+        let isDown = false, startX, scrollLeft;
+        timeline.addEventListener('pointerdown', (e) => {
+            isDown = true;
+            timeline.classList.add('active');
+            startX = e.pageX - timeline.offsetLeft;
+            scrollLeft = timeline.scrollLeft;
+        });
+        timeline.addEventListener('pointerleave', () => { isDown = false; });
+        timeline.addEventListener('pointerup', () => { isDown = false; });
+        timeline.addEventListener('pointermove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - timeline.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            timeline.scrollLeft = scrollLeft - walk;
+        });
+
+        // ===== 导航滚动 =====
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ===== 超长屏合并导航按钮 =====
+        (function setupLongScreenNav() {
+            const nav = document.getElementById('main-nav');
+            const observer = new ResizeObserver(() => {
+                const aspect = window.innerWidth / window.innerHeight;
+                if (aspect <= 9/18 && window.innerWidth >= 300) {
+                    let mergeBtn = document.getElementById('merge-nav-btn');
+                    if (!mergeBtn) {
+                        mergeBtn = document.createElement('span');
+                        mergeBtn.id = 'merge-nav-btn';
+                        mergeBtn.textContent = '📚';
+                        mergeBtn.style.cssText = 'font-size:20px;padding:6px 12px;border-radius:14px;cursor:pointer;transition:background 0.3s;color:#333;display:flex;align-items:center;user-select:none;';
+                        mergeBtn.addEventListener('click', () => scrollToSection('logs'));
+                        mergeBtn.addEventListener('mouseenter', () => { mergeBtn.style.background = 'rgba(0,0,0,0.06)'; });
+                        mergeBtn.addEventListener('mouseleave', () => { mergeBtn.style.background = 'transparent'; });
+                        const logsBtn = document.getElementById('nav-logs');
+                        const blogBtn = document.getElementById('nav-blog');
+                        if (logsBtn) logsBtn.style.display = 'none';
+                        if (blogBtn) blogBtn.style.display = 'none';
+                        nav.appendChild(mergeBtn);
+                    }
+                } else {
+                    const mergeBtn = document.getElementById('merge-nav-btn');
+                    if (mergeBtn) {
+                        mergeBtn.remove();
+                        const logsBtn = document.getElementById('nav-logs');
+                        const blogBtn = document.getElementById('nav-blog');
+                        if (logsBtn) logsBtn.style.display = '';
+                        if (blogBtn) blogBtn.style.display = '';
+                    }
+                }
+            });
+            observer.observe(document.body);
+        })();
+
+        // ===== 初始化 =====
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('greeting-desktop').textContent = translations.zh.greeting;
+            document.getElementById('poem-desktop').innerHTML = translations.zh.poem;
+            document.getElementById('greeting-mobile').textContent = translations.zh.greeting;
+            document.getElementById('poem-mobile').innerHTML = translations.zh.poem;
+            updateScrollbar();
+            doTyping();
+            renderAboutList();
+        });
+    </script>
+</body>
+</html>
