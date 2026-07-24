@@ -8,4 +8,4 @@ Allow: /
 Disallow: /404.html
 
 # 告诉爬虫站点地图的位置
-Sitemap: https://1saen.rth1.xyz/sitemap.xml
+Sitemap: https://www.ishana.cn/sitemap.xml
